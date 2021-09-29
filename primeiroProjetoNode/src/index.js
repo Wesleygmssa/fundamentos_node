@@ -110,6 +110,7 @@ app.post("/withdraw", veryIfExistsAccountCPF, (request, response) => {
     type: "debit",
   };
 
+  //Inserindo novo objeto caso houver um saque na aplicação
   customer.statement.push(statementOperation);
 
   return response.status(201).send();
