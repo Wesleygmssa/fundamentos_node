@@ -12,6 +12,31 @@ app.use(express.json());
  * statement []
  */
 
+// Middleware
+function veryIfExistsAccountCPF(request, response, next) {
+  const { cpf } = request.headers;
+  const customer = customers.find((customer) => customer.cpf === cpf);
+
+  if (!customer) {
+    return response.status(400).json({ error: "Customer not found!" });
+  }
+
+  request.customer = customer; // passando a informação para request para poder pegar em todas as rotas se necessário
+
+  return next();
+}
+
+function getBalace(statement) {
+  const balance = statement.reduce((acc, operation) => {
+    if (operation.type === "credit") {
+      return acc + operation.amount; // se for cretido vai somando
+    } else {
+      return acc - operation.amount; // se não for credito vai subtraindo
+    }
+  }, 0); //valor inicial do reduce
+  return balance;
+}
+
 let customers = [];
 
 app.post("/account", (request, response) => {
@@ -37,15 +62,57 @@ app.post("/account", (request, response) => {
   return response.status(201).send();
 });
 
-app.get("/statment", (request, response) => {
-  const { cpf } = request.headers;
-  const customer = customers.find((customer) => customer.cpf === cpf);
+// app.use(veryIfExistsAccountCPF) // tudo que tiver abaixo será utilizado pelo middlewares
+app.get("/statment", veryIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+  return response.json(customer.statement);
+});
 
-  if (!customer) {
-    return response.status(400).json({ error: "Customer not found!" });
+app.post("/deposit", veryIfExistsAccountCPF, (request, response) => {
+  //OBS: a verificação de usuário já existe está sendo verificada,
+  // pleo middlewares veryIfExistsAccountCPF()
+
+  //recebendo dados do formuário
+  const { description, amount } = request.body;
+  const { customer } = request;
+
+  //Criando novo objeto para inserir no statement
+  const statementOperation = {
+    description,
+    amount,
+    created_at: new Date(),
+    type: "credit",
+  };
+
+  //inserido deposito no statment
+  customer.statement.push(statementOperation);
+
+  return response.status(201).send();
+});
+
+//rota para fazer saque
+app.post("/withdraw", veryIfExistsAccountCPF, (request, response) => {
+  const { amount } = request.body; //quantia
+  const { customer } = request;
+  console.log(customer.statement); // depositos e retiradas
+
+  const balance = getBalace(customer.statement);
+
+  //Não tem dinheiro suficiente para fazer saque retorne uma mensagem de error
+  if (balance < amount) {
+    response.status(400).json({ error: "Insufficient funds!" });
   }
 
-  return response.json(customer.statment);
+  //operação de saque
+  const statementOperation = {
+    amount,
+    created_at: new Date(),
+    type: "debit",
+  };
+
+  customer.statement.push(statementOperation);
+
+  return response.status(201).send();
 });
 
 app.listen(3333);
