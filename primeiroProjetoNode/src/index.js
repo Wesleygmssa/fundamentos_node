@@ -157,4 +157,12 @@ app.delete("account", veryIfExistsAccountCPF, (request, response) => {
   return response.status(200).json(customers);
 });
 
+app.get("balace", veryIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+
+  const balace = getBalace(customer.statement);
+
+  return response.json(balace);
+});
+
 app.listen(3333);
