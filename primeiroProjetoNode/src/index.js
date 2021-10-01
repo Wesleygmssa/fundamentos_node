@@ -15,6 +15,7 @@ app.use(express.json());
 // Middleware
 function veryIfExistsAccountCPF(request, response, next) {
   const { cpf } = request.headers;
+  //verificando se usuário existe por CPF
   const customer = customers.find((customer) => customer.cpf === cpf);
 
   if (!customer) {
@@ -22,6 +23,7 @@ function veryIfExistsAccountCPF(request, response, next) {
   }
 
   request.customer = customer; // passando a informação para request para poder pegar em todas as rotas se necessário
+  //o Mesmo verifica se usuário existe
 
   return next();
 }
@@ -130,6 +132,29 @@ app.get("/statement/date", veryIfExistsAccountCPF, (request, response) => {
   );
 
   return response.json(statement);
+});
+
+app.put("/account", veryIfExistsAccountCPF, (request, response) => {
+  const { name } = request.body;
+  const { customer } = request;
+
+  customer.name = name;
+
+  return response.status(201).send();
+});
+
+//retornando todos dados da conta
+app.get("/account", veryIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+  return response.json(customer);
+});
+
+app.delete("account", veryIfExistsAccountCPF, (request, response) => {
+  const { customer } = request;
+  //removendo uma posição do array
+  customers.splice(customer, 1);
+
+  return response.status(200).json(customers);
 });
 
 app.listen(3333);
