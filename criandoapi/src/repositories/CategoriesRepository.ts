@@ -18,8 +18,8 @@ class CategoriesRepository{
 
 
      // category.name = name;
-    // category.description = description;
-    // category.created_at = new Date();
+     // category.description = description;
+     // category.created_at = new Date();
 
     Object.assign(category, {
         name, 
@@ -27,8 +27,17 @@ class CategoriesRepository{
         created_at: new Date()
       }) // passando os valores para o objeto});
 
-      this.categories.push(category);
+    this.categories.push(category);
 
+  }
+
+  list(): Category[]{
+    return this.categories;
+  }
+
+  findByName(name: string){
+    const category = this.categories.find(category => category.name === name);
+    return category
   }
 }
 
